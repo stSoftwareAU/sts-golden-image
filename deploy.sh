@@ -16,8 +16,8 @@ export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId
 export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
 export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
 
-# mode="apply"
-mode="destroy"
+mode="apply"
+# mode="destroy"
 tag="dta-iac/goldern-image"
 
 store_dir=$(mktemp -d -t tf_XXXXXXXXXX)
