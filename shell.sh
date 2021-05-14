@@ -13,7 +13,7 @@ export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId
 export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
 export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
 
-mode="apply"
+mode="shell"
 # mode="destroy"
 tag="dta-iac/goldern-image"
 
@@ -39,6 +39,7 @@ aws s3 cp s3://${s3_store} ${store_dir} --recursive
 docker build --rm --tag ${tag} .
 
 docker run \
+    --tty --interactive \
     --rm \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
@@ -47,6 +48,5 @@ docker run \
     ${tag} \
     ${mode}
 
-aws s3 cp ${store_dir} s3://${s3_store} --recursive
 
 rm -rf ${store_dir}

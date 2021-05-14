@@ -1,0 +1,44 @@
+name: stdPackaces
+description: Install standard packages.
+schemaVersion: 1.0
+
+phases:
+  - name: build
+    steps:
+      - name: updateYUM
+        action: ExecuteBash
+        inputs:
+          commands:
+            - yum update -y
+      - name: installDocker
+        action: ExecuteBash
+        inputs:
+          commands:
+            - amazon-linux-extras install docker
+            - service docker start
+            - usermod -a -G docker ec2-user
+      - name: installJQ
+        action: ExecuteBash
+        inputs:
+          commands:
+            - yum install jq -y           
+  - name: validate
+    steps:
+      - name: HelloWorldStep
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Hello World! Validate3"
+
+  - name: test
+    steps:
+      - name: testDocker
+        action: ExecuteBash
+        inputs:
+          commands:
+            - docker info
+      - name: testJQ
+        action: ExecuteBash
+        inputs:
+          commands:
+            - jq -help
