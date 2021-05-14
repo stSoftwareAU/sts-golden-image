@@ -3,6 +3,37 @@ set -e
 BASE_DIR="$( cd -P "$( dirname "$BASH_SOURCE" )" && pwd -P )"
 cd "${BASE_DIR}"
 
+function clearOld(){
+
+    listPipeline=`aws imagebuilder list-image-pipelines`
+    for row in $(echo "${listPipeline}" | jq -r '.imagePipelineList[]|select(.name|test( "[gG]olden.*[iI]mage")) | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        aws imagebuilder delete-image-pipeline --image-pipeline-arn $(_jq '.arn')
+    done
+
+    listRecipes=`aws imagebuilder list-image-recipes --owner Self`
+    for row in $(echo "${listRecipes}" | jq -r '.imageRecipeSummaryList[]|select(.name|test( "[gG]olden.*[iI]mage")) | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        aws imagebuilder delete-image-recipe --image-recipe-arn $(_jq '.arn')
+    done
+
+    listComponents=`aws imagebuilder list-components --owner Self`
+
+    for row in $(echo "${listComponents}" | jq -r '.componentVersionList[]|select(.name|test( "[gG]olden.*[iI]mage")) | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        aws imagebuilder delete-component --component-build-version-arn $(_jq '.arn')
+    done
+}
+
 source environment.properties
 
 ASSUME_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}"
@@ -13,7 +44,6 @@ export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId
 export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
 export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
 
-mode="apply"
 # mode="destroy"
 tag="dta-iac/goldern-image"
 
@@ -36,7 +66,9 @@ s3_store="${s3_bucket}/${tag}/store"
 
 aws s3 cp s3://${s3_store} ${store_dir} --recursive
 
-docker build --rm --tag ${tag} .
+docker build --tag ${tag} .
+
+clearOld
 
 docker run \
     --rm \
@@ -45,7 +77,7 @@ docker run \
     --env AWS_SESSION_TOKEN \
     --volume ${store_dir}:/home/IaC/store \
     ${tag} \
-    ${mode}
+    apply
 
 aws s3 cp ${store_dir} s3://${s3_store} --recursive
 
