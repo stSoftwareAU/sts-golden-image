@@ -14,8 +14,13 @@ variable "region"{
   description = "The AWS region"
 }
 
+variable "area"{
+  type        = string
+  description = "The Area"
+}
 provider "aws" {
   region=var.region
+
 }
 
 resource "aws_imagebuilder_component" "stdPackages" {
@@ -61,9 +66,11 @@ resource "aws_imagebuilder_infrastructure_configuration" "DTA_golden_image" {
   name                          = "DTA_golden_image"
   terminate_instance_on_failure = true
 
-  tags = {
-    foo = "bar"
+  resource_tags ={
+      Type        = "Golden Image"
+      Area        = var.area
   }
+
 }
 
 resource "aws_iam_instance_profile" "golden_image" {

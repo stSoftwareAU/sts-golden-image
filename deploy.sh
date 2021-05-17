@@ -4,7 +4,7 @@ BASE_DIR="$( cd -P "$( dirname "$BASH_SOURCE" )" && pwd -P )"
 cd "${BASE_DIR}"
 
 function clearOld(){
-
+set -x
     listPipeline=`aws imagebuilder list-image-pipelines`
     for row in $(echo "${listPipeline}" | jq -r '.imagePipelineList[]|select(.name|test( "[gG]olden.*[iI]mage")) | @base64'); do
         _jq() {
@@ -30,11 +30,18 @@ function clearOld(){
             echo ${row} | base64 --decode | jq -r ${1}
         }
 
-        aws imagebuilder delete-component --component-build-version-arn $(_jq '.arn')
+        aws imagebuilder delete-component --component-build-version-arn "$(_jq '.arn')/1"
     done
 }
 
 source environment.properties
+
+jq --arg key0   'area' \
+   --arg value0 "${AREA}" \
+   --arg key1   'region' \
+   --arg value1 'ap-southeast-2' \
+   '. | .[$key0]=$value0 | .[$key1]=$value1' \
+   <<<'{}' > IaC/01_deploy.auto.tfvars.json
 
 ASSUME_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}"
 
@@ -81,4 +88,5 @@ docker run \
 
 aws s3 cp ${store_dir} s3://${s3_store} --recursive
 
+rm -f IaC/01_deploy.auto.tfvars.json
 rm -rf ${store_dir}
