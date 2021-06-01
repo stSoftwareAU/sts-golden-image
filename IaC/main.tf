@@ -65,8 +65,13 @@ resource "aws_imagebuilder_infrastructure_configuration" "DTA_golden_image" {
 resource "aws_iam_role" "golden_image" {
   name = "Golden-ImageV6"
   assume_role_policy  = file( "role_policy.json")
-  managed_policy_arns=["arn:aws:iam::aws:policy/AWSImageBuilderFullAccess"]
+  managed_policy_arns=[
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder"
+  ]
 }
+
+# EC2InstanceProfileForImageBuilder, EC2InstanceProfileForImageBuilderECRContainerBuilds, and AmazonSSMManagedInstanceCore.
 
 # resource "aws_iam_role_policy_attachment" "golden_image" {
 #   role       = aws_iam_role.golden_image.name

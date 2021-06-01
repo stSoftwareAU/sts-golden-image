@@ -36,7 +36,7 @@ set -x
     done
 }
 
-source environment.properties
+# source environment.properties
 
 jq --arg key0   'area' \
    --arg value0 "${AREA}" \

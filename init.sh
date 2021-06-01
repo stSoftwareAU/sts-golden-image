@@ -3,7 +3,11 @@ set -e
 BASE_DIR="$( cd -P "$( dirname "$BASH_SOURCE" )" && pwd -P )"
 cd "${BASE_DIR}"
 
-source environment.properties
+ENV_FILE=".env.properties"
+if [[ -f ${ENV_FILE} ]]; then
+    source ${ENV_FILE} 
+fi
+
 export DOCKER_TAG="dta-iac/scratch_shutdown"
 
 ASSUME_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}"
