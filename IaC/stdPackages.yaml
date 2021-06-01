@@ -5,11 +5,11 @@ schemaVersion: 1.0
 phases:
   - name: build
     steps:
-      - name: updateYUM
-        action: ExecuteBash
-        inputs:
-          commands:
-            - yum update -y
+      # - name: updateYUM
+      #   action: ExecuteBash
+      #   inputs:
+      #     commands:
+      #       - yum update -y
       - name: installDocker
         action: ExecuteBash
         inputs:
@@ -18,6 +18,14 @@ phases:
             - service docker start
             - usermod -a -G docker ec2-user
             - systemctl enable docker
+      - name: installSSM
+        action: ExecuteBash
+        inputs:
+          commands:
+            - yum install -y https://s3.${REGION}.amazonaws.com/amazon-ssm-${REGION}/latest/linux_arm64/amazon-ssm-agent.rpm
+            - systemctl enable amazon-ssm-agent
+            - systemctl start amazon-ssm-agent
+            - systemctl status amazon-ssm-agent
       - name: installJQ
         action: ExecuteBash
         inputs:
@@ -25,11 +33,11 @@ phases:
             - yum install jq -y           
   - name: validate
     steps:
-      - name: HelloWorldStep
+      - name: SSM
         action: ExecuteBash
         inputs:
           commands:
-            - echo "Hello World! Validate3"
+            - systemctl status amazon-ssm-agent
 
   - name: test
     steps:
