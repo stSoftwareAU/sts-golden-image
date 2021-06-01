@@ -3,6 +3,8 @@ set -e
 BASE_DIR="$( cd -P "$( dirname "$BASH_SOURCE" )" && pwd -P )"
 cd "${BASE_DIR}"
 
+. ./init.sh
+
 function clearOld(){
 set -x
     listPipeline=`aws imagebuilder list-image-pipelines`
@@ -42,14 +44,6 @@ jq --arg key0   'area' \
    --arg value1 'ap-southeast-2' \
    '. | .[$key0]=$value0 | .[$key1]=$value1' \
    <<<'{}' > IaC/01_deploy.auto.tfvars.json
-
-ASSUME_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}"
-
-TEMP_ROLE=`aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name "Deploy-pipeline"`
-
-export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
-export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
-export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
 
 # mode="destroy"
 tag="dta-iac/goldern-image"

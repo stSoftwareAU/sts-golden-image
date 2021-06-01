@@ -18,9 +18,15 @@ variable "area"{
   type        = string
   description = "The Area"
 }
+
 provider "aws" {
   region=var.region
-
+  default_tags {
+    tags = {
+      Environment = var.area
+      Name        = "Golden Image"
+    }
+  }
 }
 
 resource "aws_imagebuilder_component" "stdPackages" {
@@ -34,17 +40,9 @@ resource "aws_imagebuilder_component" "stdPackages" {
 data "aws_imagebuilder_component" "amazonCloudwatchAgentLinux" {
   arn = "arn:aws:imagebuilder:ap-southeast-2:aws:component/amazon-cloudwatch-agent-linux/1.0.0"
 }
-# resource "aws_imagebuilder_component" "amazonCloudwatchAgentLinux" {
-#   name = "amazonCloudwatchAgentLinux"
-#   platform = "Linux"
-#   version  = "1.0.0"
-#   data{
-#     arn= "arn:aws:imagebuilder:ap-southeast-2:aws:component/amazon-cloudwatch-agent-linux/1.0.0/1"
-#   }
-# }
 
 resource "aws_imagebuilder_image_pipeline" "golden_image" {
-  image_recipe_arn                 = aws_imagebuilder_image_recipe.golden_image_recipe_v5.arn
+  image_recipe_arn                 = aws_imagebuilder_image_recipe.golden_image.arn
   infrastructure_configuration_arn = aws_imagebuilder_infrastructure_configuration.DTA_golden_image.arn
   name                             = "Golden Image"
   description = "Golden Image for launching of all other instances"
@@ -54,69 +52,33 @@ resource "aws_imagebuilder_image_pipeline" "golden_image" {
   }
 }
 
-# resource "aws_imagebuilder_image" "DTA_golden_image" {
-#   distribution_configuration_arn   = aws_imagebuilder_distribution_configuration.golden_image.arn
-#   image_recipe_arn                 = aws_imagebuilder_image_recipe.DTA_golden_image.arn
-#   infrastructure_configuration_arn = aws_imagebuilder_infrastructure_configuration.DTA_golden_image.arn
-# }
-
 resource "aws_imagebuilder_infrastructure_configuration" "DTA_golden_image" {
   description                   = "Golden image"
   instance_profile_name         = aws_iam_instance_profile.golden_image.name
   name                          = "DTA_golden_image"
   terminate_instance_on_failure = true
 
-  resource_tags ={
-      Type        = "Golden Image"
-      Area        = var.area
-  }
-
 }
+# data "aws_iam_policy" "AWSImageBuilderFullAccess" {
+#   arn = "arn:aws:iam::aws:policy/AWSImageBuilderFullAccess"
+# }
+resource "aws_iam_role" "golden_image" {
+  name = "Golden-ImageV6"
+  assume_role_policy  = file( "role_policy.json")
+  managed_policy_arns=["arn:aws:iam::aws:policy/AWSImageBuilderFullAccess"]
+}
+
+# resource "aws_iam_role_policy_attachment" "golden_image" {
+#   role       = aws_iam_role.golden_image.name
+#   policy_arn = data.aws_iam_policy.AWSImageBuilderFullAccess.arn
+# }
 
 resource "aws_iam_instance_profile" "golden_image" {
-  name = "Golden-ImageV4"
-  role = "EC2InstanceProfileForImageBuilder"
+  name = aws_iam_role.golden_image.name
+  role = aws_iam_role.golden_image.name
 }
 
-# resource "aws_iam_role" "role" {
-#   name = "test_role"
-#   path = "/"
-
-#   assume_role_policy = <<EOF
-# {
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Action": "sts:AssumeRole",
-#             "Principal": {
-#                "Service": "ec2.amazonaws.com"
-#             },
-#             "Effect": "Allow",
-#             "Sid": ""
-#         }
-#     ]
-# }
-# EOF
-# }
-
-# resource "aws_imagebuilder_distribution_configuration" "golden_image" {
-#   name = "Golden Image"
-
-#   distribution {
-#     ami_distribution_configuration {
-#       ami_tags = {
-#         CostCenter = "IT"
-#       }
-
-#       name = "golden-image-{{ imagebuilder:buildDate }}"
-
-#     }
-
-#     region = var.region
-#   }
-# }
-
-resource "aws_imagebuilder_image_recipe" "golden_image_recipe_v5" {
+resource "aws_imagebuilder_image_recipe" "golden_image" {
   block_device_mapping {
     device_name = "/dev/xvda"
 
@@ -135,8 +97,8 @@ resource "aws_imagebuilder_image_recipe" "golden_image_recipe_v5" {
     component_arn = data.aws_imagebuilder_component.amazonCloudwatchAgentLinux.arn
   }
 
-  name         = "golden_image_recipe"
+  name         = "golden_image"
   parent_image = "arn:aws:imagebuilder:${var.region}:aws:image/amazon-linux-2-arm64/x.x.x"
-  version      = "1.0.5"
+  version      = "1.0.6"
   working_directory = "/tmp"
 }
