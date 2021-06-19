@@ -59,15 +59,15 @@ docker build --tag ${tag} .
 clearOld
 
 docker run \
+    -it \
     --rm \
     --env AWS_ACCESS_KEY_ID \
     --env AWS_SECRET_ACCESS_KEY \
     --env AWS_SESSION_TOKEN \
     --volume ${store_dir}:/home/IaC/store \
     ${tag} \
-    apply
+    shell
 
-aws s3 cp ${store_dir} s3://${s3_store} --recursive
 
 rm -f IaC/01_deploy.auto.tfvars.json
 rm -rf ${store_dir}

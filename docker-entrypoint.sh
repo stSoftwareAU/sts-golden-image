@@ -45,8 +45,6 @@ function doDestroy()
 
 function doShell()
 {
-  doInit
-  terraform init -input=false
   /bin/sh
 }
 
