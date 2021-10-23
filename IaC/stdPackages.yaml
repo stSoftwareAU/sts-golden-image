@@ -14,18 +14,15 @@ phases:
         action: ExecuteBash
         inputs:
           commands:
-            - amazon-linux-extras install docker
+            - amazon-linux-extras install -y docker
             - service docker start
             - usermod -a -G docker ec2-user
             - systemctl enable docker
-      - name: installSSM
+      - name: installEFS
         action: ExecuteBash
         inputs:
           commands:
-            - yum install -y https://s3.${REGION}.amazonaws.com/amazon-ssm-${REGION}/latest/linux_arm64/amazon-ssm-agent.rpm
-            - systemctl enable amazon-ssm-agent
-            - systemctl start amazon-ssm-agent
-            - systemctl status amazon-ssm-agent
+            - yum install -y amazon-efs-utils
       - name: installJQ
         action: ExecuteBash
         inputs:
