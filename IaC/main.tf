@@ -82,10 +82,10 @@ data "aws_subnet_ids" "private" {
   }
 }
 
-data "aws_security_group" "default" {
-  name   = "default"
-  vpc_id = data.aws_vpc.main.id
-}
+# data "aws_security_group" "default" {
+#   name   = "default"
+#   vpc_id = data.aws_vpc.main.id
+# }
 
 resource "aws_imagebuilder_component" "stdPackages" {
   data        = replace(file("stdPackages.yaml"), "$${REGION}", var.region)
@@ -96,7 +96,7 @@ resource "aws_imagebuilder_component" "stdPackages" {
 }
 
 data "aws_imagebuilder_component" "amazonCloudwatchAgentLinux" {
-  arn = "arn:aws:imagebuilder:ap-southeast-2:aws:component/amazon-cloudwatch-agent-linux/1.0.0"
+  arn = "arn:aws:imagebuilder:ap-southeast-2:aws:component/amazon-cloudwatch-agent-linux/x.x.x"
 }
 
 data "aws_imagebuilder_component" "updateLinux" {
@@ -104,10 +104,10 @@ data "aws_imagebuilder_component" "updateLinux" {
 }
 
 data "aws_imagebuilder_component" "bootTest" {
-  arn = "arn:aws:imagebuilder:${var.region}:aws:component/simple-boot-test-linux/1.0.0/1"
+  arn = "arn:aws:imagebuilder:${var.region}:aws:component/simple-boot-test-linux/x.x.x"
 }
 data "aws_imagebuilder_component" "rebootTest" {
-  arn = "arn:aws:imagebuilder:${var.region}:aws:component/reboot-test-linux/1.0.0/1"
+  arn = "arn:aws:imagebuilder:${var.region}:aws:component/reboot-test-linux/x.x.x"
 }
 
 resource "aws_imagebuilder_image_pipeline" "golden_image_arm64" {
@@ -132,13 +132,50 @@ resource "aws_imagebuilder_image_pipeline" "golden_image_x86" {
   }
 }
 
+resource "aws_security_group" "golden-image" {
+  name        = join("-", [lower(var.department), "golden", "image", lower(var.area)])
+  description = "Aloow building of the golden images"
+  vpc_id      = data.aws_vpc.main.id
+  # ingress {
+  #   cidr_blocks = [
+  #     "0.0.0.0/0"
+  #   ]
+  #   description = "Jenkins Access"
+  #   from_port   = 80
+  #   to_port     = 80
+  #   protocol    = "tcp"
+  # }
+
+  # ingress {
+  #   cidr_blocks = [
+  #     "0.0.0.0/0"
+  #   ]
+  #   description = "Jenkins Access"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+  # }
+
+  # egress {
+  #   from_port        = 0
+  #   to_port          = 0
+  #   protocol         = "-1"
+  #   cidr_blocks      = ["0.0.0.0/0"]
+  #   ipv6_cidr_blocks = ["::/0"]
+  # }
+
+  tags = {
+    Name = "Golden Image"
+  }
+}
+
 resource "aws_imagebuilder_infrastructure_configuration" "golden_image" {
   description                   = "Golden image"
   instance_profile_name         = aws_iam_instance_profile.golden_image.name
   name                          = join("-", [upper(var.department), "golden_image", lower(var.area)])
   terminate_instance_on_failure = true
   subnet_id                     = tolist(data.aws_subnet_ids.private.ids)[0]
-  security_group_ids            = [data.aws_security_group.default.id]
+  security_group_ids            = [resource.aws_security_group.golden-image.id]
 }
 
 resource "aws_iam_role" "golden_image" {
